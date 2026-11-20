@@ -1,0 +1,13 @@
+ticker,company_name,sector,industry
+AAPL,Apple Inc.,Technology,Consumer Electronics
+AMD,"Advanced Micro Devices, Inc.",Technology,Semiconductors
+BAC,Bank of America Corporation,Financial Services,Banks - Diversified
+CVX,Chevron Corporation,Energy,Oil & Gas Integrated
+FISV,"Fiserv, Inc.",,
+GEV,GE Vernova Inc.,Industrials,Specialty Industrial Machinery
+JPM,JPMorgan Chase & Co.,Financial Services,Banks - Diversified
+NVDA,NVIDIA Corporation,Technology,Semiconductors
+SPCX,Space Exploration Technologies Corp.,Industrials,Aerospace & Defense
+TXN,Texas Instruments Incorporated,Technology,Semiconductors
+WFC,Wells Fargo & Company,Financial Services,Banks - Diversified
+XOM,ExxonMobil Holdings Corporation,Energy,Oil & Gas Integrated

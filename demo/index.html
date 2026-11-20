@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Team 237 Demo</title>
+  <style>
+    body { margin: 0; background: #f5f7fa; color: #182536; font: 16px/1.5 system-ui, sans-serif; }
+    main { max-width: 1160px; margin: 32px auto; padding: 0 20px; }
+    h1 { font-size: 26px; }
+    h2 { font-size: 20px; margin: 0; }
+    figure, .control-card, .stock-summary { padding: 24px; background: white; border: 1px solid #dce2ea; border-radius: 12px; }
+    figure { margin: 24px 0; }
+    .control-card { padding: 16px; }
+    .stock-summary { margin: 0; }
+    .summary-identity { display: flex; align-items: center; gap: 12px; margin: 12px 0; min-width: 0; }
+    .summary-company { margin: 0; min-width: 0; font-size: 18px; font-weight: 600; overflow-wrap: anywhere; }
+    .summary-logo { display: grid; place-items: center; flex: 0 0 32px; width: 32px; height: 32px; background: white; }
+    .summary-logo img { display: block; width: 32px; height: 32px; object-fit: contain; }
+    .logo-fallback { display: grid; place-items: center; box-sizing: border-box; width: 32px; height: 32px; border: 1px solid #dce2ea; border-radius: 4px; background: #f5f7fa; color: #526176; font-size: 9px; font-weight: 700; }
+    .summary-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px; margin: 16px 0; }
+    .stock-summary > .summary-metrics { grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); }
+    .summary-metrics dt { color: #526176; font-size: 14px; }
+    .summary-metrics dd { margin: 4px 0 0; font-size: 18px; font-weight: 600; overflow-wrap: anywhere; }
+    figcaption p { margin: 6px 0; }
+    svg { display: block; width: 100%; height: auto; }
+    .axis { color: #526176; font-size: 13px; }
+    .axis-label { fill: #182536; font-size: 15px; }
+    .zero-line { stroke: #aab5c4; stroke-dasharray: 4 4; }
+    .ticker-label { fill: #182536; font-size: 14px; font-weight: 700; }
+    .sector-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 12px 0; padding: 0; list-style: none; }
+    .sector-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+    .sector-swatch { width: 12px; height: 12px; border-radius: 50%; }
+    .controls { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 16px; margin-top: 24px; }
+    .controls > * { min-width: 0; box-sizing: border-box; }
+    .control-help { margin: 4px 0 0; font-size: 14px; color: #526176; }
+    .controls label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
+    details { margin: 16px 0; }
+    summary { cursor: pointer; font-weight: 600; }
+    [hidden] { display: none !important; }
+    select, input { box-sizing: border-box; max-width: 100%; padding: 8px; font: inherit; border: 1px solid #aab5c4; border-radius: 6px; }
+    .stock-control { position: relative; z-index: 2; overflow: visible; }
+    .stock-picker { position: relative; }
+    .stock-picker input { width: 100%; }
+    .stock-results { position: absolute; z-index: 10; top: 100%; left: 0; right: 0; margin-top: 4px; background: white; border: 1px solid #aab5c4; border-radius: 6px; box-shadow: 0 4px 12px #18253626; }
+    .stock-options { max-height: 280px; overflow-y: auto; list-style: none; margin: 0; padding: 4px; }
+    .stock-option { padding: 8px; border-radius: 4px; cursor: pointer; overflow-wrap: anywhere; }
+    .stock-option:hover, .stock-option.active { background: #e7f0fa; }
+    .stock-option.active { outline: 2px solid #3475ae; outline-offset: -2px; }
+    .stock-search-status { margin: 0; padding: 12px; color: #526176; }
+    .stock-points circle { cursor: pointer; }
+    .stock-points circle:focus-visible { outline: 3px solid #182536; }
+    .industry-chart-scroll { overflow-x: auto; }
+    #chart-2 { min-width: 980px; }
+    .industry-name { font-size: 15px; fill: #182536; }
+    .industry-count { font-size: 12px; fill: #526176; }
+    .bar-value { font-size: 13px; fill: #182536; }
+    [data-state="missing"] { color: #805000; }
+    [data-state="error"] { color: #b42318; }
+    @media (min-width: 640px) {
+      .controls { grid-template-columns: 160px minmax(0, 1fr); }
+      .stock-summary { grid-column: 1 / -1; }
+    }
+    @media (min-width: 1200px) {
+      .controls { grid-template-columns: 160px 320px minmax(0, 1fr); }
+      .stock-summary { grid-column: auto; }
+    }
+  </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script defer src="./app.js?v=logo-sync-20261118"></script>
+</head>
+<body>
+  <main>
+    <h1>Team 237 · US Equity Risk Explorer</h1>
+    <p id="data-status" role="status">Loading demo data…</p>
+    <div class="controls" aria-label="Shared chart selections">
+      <div class="control-card year-control">
+        <label for="year-select">Year
+          <select id="year-select" disabled></select>
+        </label>
+        <p id="year-cutoff" class="control-help" role="status" hidden>2026 data through Oct 30</p>
+      </div>
+      <div class="control-card stock-control">
+        <div id="stock-picker" class="stock-picker">
+          <label for="stock-select">Stock Search
+            <input id="stock-select" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="stock-options" aria-describedby="stock-help" autocomplete="off" spellcheck="false" placeholder="Search ticker or company" disabled>
+          </label>
+          <div id="stock-results" class="stock-results" hidden>
+            <ul id="stock-options" class="stock-options" role="listbox" aria-label="Stocks"></ul>
+            <p id="stock-search-status" class="stock-search-status" role="status" hidden></p>
+          </div>
+        </div>
+        <p id="stock-help" class="control-help">Click a point to select a stock.</p>
+      </div>
+      <section id="stock-summary" class="stock-summary" aria-labelledby="stock-summary-title" aria-live="polite" aria-busy="true">
+        <h2 id="stock-summary-title">Selected Stock Summary · 2025</h2>
+        <div class="summary-identity">
+          <p class="summary-company"><span id="summary-company">Unavailable</span> (<span id="summary-ticker">Unavailable</span>)</p>
+        </div>
+        <dl class="summary-metrics">
+          <div><dt>Annualized Return</dt><dd id="summary-annualized-return">Unavailable</dd></div>
+          <div><dt>Annualized Volatility</dt><dd id="summary-annualized-volatility">Unavailable</dd></div>
+          <div><dt>Industry</dt><dd id="summary-industry">Unavailable</dd></div>
+        </dl>
+        <details id="summary-more-metrics">
+          <summary>More Metrics</summary>
+          <dl class="summary-metrics">
+            <div><dt>Period Return</dt><dd id="summary-period-return">Unavailable</dd></div>
+            <div><dt>Period Start</dt><dd id="summary-period-start">Unavailable</dd></div>
+            <div><dt>Period End</dt><dd id="summary-period-end">Unavailable</dd></div>
+            <div><dt>Daily Return Observations</dt><dd id="summary-observations">Unavailable</dd></div>
+          </dl>
+        </details>
+      </section>
+    </div>
+    <figure>
+      <figcaption>
+        <h2>Figure 1 · Annualized Return vs. Volatility</h2>
+        <p id="chart-1-context">Demo sample · Waiting for data.</p>
+      </figcaption>
+      <ul id="sector-legend" class="sector-legend" aria-label="Sector colors"></ul>
+      <p id="chart-status" role="status" hidden></p>
+      <svg id="chart-1" viewBox="0 0 920 540" role="img" aria-labelledby="chart-title chart-description">
+        <title id="chart-title">Annualized return versus volatility</title>
+        <desc id="chart-description">Waiting for data.</desc>
+      </svg>
+    </figure>
+    <figure>
+      <figcaption>
+        <h2>Figure 2 · Industry Comparison</h2>
+        <p id="chart-2-context">Equal-weighted averages across all eligible stocks in each shown industry within the project’s stock universe.</p>
+      </figcaption>
+      <p id="industry-status" role="status" hidden></p>
+      <div class="industry-chart-scroll">
+        <svg id="chart-2" viewBox="0 0 1160 530" role="img" aria-labelledby="industry-title industry-description">
+          <title id="industry-title">Industry comparison</title>
+          <desc id="industry-description">Waiting for data.</desc>
+        </svg>
+      </div>
+    </figure>
+    <details>
+      <summary>Methodology</summary>
+      <p>Annualized returns express observed period returns on a 252-trading-day basis. Annualized volatility is the sample standard deviation of daily returns multiplied by √252. Industry volatility is the average of eligible stocks’ annualized volatilities. Industry counts reflect the number of eligible stocks included in each average.</p>
+    </details>
+    <details>
+      <summary>Data details</summary>
+      <p id="data-counts">Waiting for data…</p>
+    </details>
+  </main>
+</body>
+</html>
